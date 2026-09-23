@@ -8,7 +8,8 @@ const fs = require('fs');
 const path = require('path');
 const { aplicarPlantilla } = require('./clientes');
 
-const LOG_FILE = path.join(__dirname, 'difusion_log.json');
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const LOG_FILE = path.join(DATA_DIR, 'difusion_log.json');
 
 const estado = {
   activo: false,

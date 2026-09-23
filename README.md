@@ -35,7 +35,23 @@ node index.js
 3. Escribir plantilla → 👁 Vista previa → ☑ probar con 1 si querés
 4. 📣 Enviar a filtrados (delays recomendados 6–14s; cuentas nuevas 10–20s)
 
-## 🟠 Deploy en Replit (recomendado para este bot)
+## 🚂 Deploy en Railway (bot online 24/7)
+
+1. Entrá a https://railway.app → **New Project → Deploy from GitHub repo** → elegí `whatsapp-difusion-bot`
+2. **Variables** (pestaña Variables → Raw Editor, pegá y completá):
+```
+SHEET_ID=1aikReF2JnGheIuuesZPodY6stLAM2FWuKrQdS-b7WIo
+SHEET_GID=0
+SHEET_REFRESH_MIN=2
+DATA_DIR=/app/data
+BOT_NAME=DifusionBot
+PANEL_PASSWORD=tu_contraseña
+```
+3. **Volume persistente** (para no perder la sesión de WhatsApp): pestaña del servicio → **+ New → Volume** → Mount Path: `/app/data`
+4. **Healthcheck**: Settings → Health Check Path: `/ping`
+5. Deploy → abrí la URL pública + `/difusion` → escaneá el QR con WhatsApp Business. Listo, queda online y recarga solo el Excel cada 2 min.
+
+## 🟠 Deploy en Replit
 
 Replit mantiene el proceso vivo y el disco (`auth_info/`) persiste, así la sesión de WhatsApp no se pierde.
 

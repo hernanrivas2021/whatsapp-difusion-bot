@@ -1,8 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const PRECIOS_FILE = path.join(__dirname, 'precios.json');
-const HORARIO_FILE = path.join(__dirname, 'horario.json');
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const PRECIOS_FILE = path.join(DATA_DIR, 'precios.json');
+const HORARIO_FILE = path.join(DATA_DIR, 'horario.json');
 
 const HORARIO_DEFAULT = 'Lunes a Viernes de 9:00 a 18:00 · Sábados de 9:00 a 13:00';
 let HORARIO_TEXTO = HORARIO_DEFAULT;

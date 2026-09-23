@@ -11,6 +11,15 @@ const flujo = require('./flujoFotocopiadora');
 const { PDFDocument } = require('pdf-lib');
 const clientesMod = require('./clientes');
 const difusion = require('./difusion');
+// ─── DATOS PERSISTENTES ───────────────────────────────────────────────────────
+// Por defecto se guardan junto al código. Para hosting con disco efímero
+// (Railway/Render), seteá DATA_DIR al path del volumen (ej: /app/data)
+// y montá ahí el Volume: persiste sesión WhatsApp, adjuntos y pedidos.
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const AUTH_DIR = path.join(DATA_DIR, 'auth_info');
+if (!fs.existsSync(DATA_DIR)) {
+  try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch (e) { console.error('No se pudo crear DATA_DIR:', e.message); }
+}
 // ─── DIFUSIÓN MASIVA (Google Sheets + WhatsApp) ─────────────────────────────
 let SHEET_ID = process.env.SHEET_ID || '';
 let SHEET_GID = process.env.SHEET_GID || '0';
@@ -123,7 +132,7 @@ function programarReconexion(ms = 3000) {
 }
 
 // Pedidos confirmados (en memoria + persistencia simple en disco)
-const PEDIDOS_FILE = path.join(__dirname, 'pedidos.json');
+const PEDIDOS_FILE = path.join(DATA_DIR, 'pedidos.json');
 let pedidos = [];
 try {
   if (fs.existsSync(PEDIDOS_FILE)) {
@@ -140,9 +149,9 @@ function guardarPedidos() {
 // ─── EXPRESS (panel web) ──────────────────────────────────────────────────────
 const app = express();
 // Adjuntos: carpeta y ruta de servicio
-const ATTACHMENTS_DIR = path.join(__dirname, 'attachments');
+const ATTACHMENTS_DIR = path.join(DATA_DIR, 'attachments');
 if (!fs.existsSync(ATTACHMENTS_DIR)) {
-  try { fs.mkdirSync(ATTACHMENTS_DIR); } catch (e) { console.error('No se pudo crear attachments/:', e.message); }
+  try { fs.mkdirSync(ATTACHMENTS_DIR, { recursive: true }); } catch (e) { console.error('No se pudo crear attachments/:', e.message); }
 }
 app.use('/attachments', express.static(ATTACHMENTS_DIR));
 app.use(express.json());
@@ -790,7 +799,7 @@ app.post('/api/desvincular', async (req, res) => {
     }
     // Borrar credenciales para forzar QR nuevo
     try {
-      const dir = path.join(__dirname, 'auth_info');
+      const dir = AUTH_DIR;
       if (fs.existsSync(dir)) {
         for (const f of fs.readdirSync(dir)) fs.unlinkSync(path.join(dir, f));
       }
@@ -829,7 +838,7 @@ async function iniciarBot() {
   const miGen = ++socketGen;
 
   try {
-    const { state, saveCreds } = await useMultiFileAuthState('./auth_info');
+    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
     const { version } = await fetchLatestBaileysVersion();
 
     const nuevoSock = makeWASocket({
@@ -868,7 +877,7 @@ async function iniciarBot() {
 
         if (loggedOut) {
           try {
-            const dir = path.join(__dirname, 'auth_info');
+            const dir = AUTH_DIR;
             if (fs.existsSync(dir)) {
               for (const f of fs.readdirSync(dir)) fs.unlinkSync(path.join(dir, f));
             }
