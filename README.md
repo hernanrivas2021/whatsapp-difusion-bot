@@ -35,6 +35,20 @@ node index.js
 3. Escribir plantilla → 👁 Vista previa → ☑ probar con 1 si querés
 4. 📣 Enviar a filtrados (delays recomendados 6–14s; cuentas nuevas 10–20s)
 
+## 🟠 Deploy en Replit (recomendado para este bot)
+
+Replit mantiene el proceso vivo y el disco (`auth_info/`) persiste, así la sesión de WhatsApp no se pierde.
+
+1. Entrá a https://replit.com → **Create Repl → Import from GitHub** → pegá `https://github.com/hernanrivas2021/whatsapp-difusion-bot`
+2. En Replit: pestaña **Secrets** (🔒) → agregá:
+   - `SHEET_ID` = ID de tu Google Sheet
+   - `SHEET_GID` = `0`
+   - `PANEL_PASSWORD` = tu contraseña del panel (opcional)
+   - `BOT_NAME` = `DifusionBot`
+3. Apretá **Run** (corre `npm install && node index.js`)
+4. Abrí la web del Repl + `/difusion` (ej: `https://tu-repl.tu-user.repl.co/difusion`) → escaneá el QR con WhatsApp Business
+5. Para producción: **Deployments → Reserved VM** (siempre encendido). No uses Autoscale (duerme el bot y mata la sesión).
+
 ## ⚙️ Config `.env`
 
 ```
