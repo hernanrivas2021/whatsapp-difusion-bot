@@ -18,6 +18,26 @@ let clientesCache = [];       // última lista cargada del Sheet
 let clientesCacheFecha = null;
 const PLANTILLA_DEFAULT = process.env.PLANTILLA_DEFAULT ||
   'Hola {nombre} 👋, te contactamos por el caso del {fecha_sucedio} (registrado el {fecha_subida}). Queríamos contarte las novedades. ¡Gracias por tu confianza!';
+// Auto-actualización del Sheet: cada N minutos recarga la caché en segundo plano
+// para que lo que cambies en el Excel se refleje solo. 0 = desactivado.
+const SHEET_REFRESH_MIN = Number(process.env.SHEET_REFRESH_MIN || 2);
+async function refrescarCacheAuto(origen = 'auto') {
+  if (!SHEET_ID) return;
+  if (difusion.getEstado().activo) return; // no tocar la caché durante un envío
+  try {
+    const lista = await clientesMod.fetchClientes(SHEET_ID, SHEET_GID);
+    clientesCache = lista;
+    clientesCacheFecha = new Date().toISOString();
+    console.log(`🔄 [${origen}] Clientes actualizados: ${lista.length} filas`);
+  } catch (e) {
+    console.error(`🔄 [${origen}] No se pudo actualizar el Sheet:`, e.message);
+  }
+}
+if (SHEET_REFRESH_MIN > 0) {
+  setTimeout(() => refrescarCacheAuto('inicio'), 10000); // primera carga a los 10s
+  setInterval(() => refrescarCacheAuto('auto'), Math.max(1, SHEET_REFRESH_MIN) * 60000);
+  console.log(`🔄 Auto-refresh del Sheet cada ${SHEET_REFRESH_MIN} min`);
+}
 // No necesitamos pendingAttachments, usamos la sesión directamente
 
 // Delay aleatorio para simular respuesta humana (anti-detección de bot)

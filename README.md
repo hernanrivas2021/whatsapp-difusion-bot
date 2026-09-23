@@ -43,6 +43,7 @@ Replit mantiene el proceso vivo y el disco (`auth_info/`) persiste, así la sesi
 2. En Replit: pestaña **Secrets** (🔒) → agregá:
    - `SHEET_ID` = ID de tu Google Sheet
    - `SHEET_GID` = `0`
+   - `SHEET_REFRESH_MIN` = `2` (el bot recarga solo el Excel cada 2 min)
    - `PANEL_PASSWORD` = tu contraseña del panel (opcional)
    - `BOT_NAME` = `DifusionBot`
 3. Apretá **Run** (corre `npm install && node index.js`)
