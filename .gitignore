@@ -1,0 +1,7 @@
+node_modules/
+auth_info/
+attachments/
+*.log
+.env
+difusion_log.json
+pedidos.json

@@ -1,0 +1,27 @@
+entrypoint = "index.js"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["node", "index.js"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[workflows]
+runButton = "Start Bot"
+
+[[workflows.workflow]]
+name = "Start Bot"
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install && node index.js"
+
+[agent]
+expertMode = true

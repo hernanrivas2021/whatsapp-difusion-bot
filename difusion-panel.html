@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Difusión masiva WhatsApp</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#0d1117;color:#e6edf3;min-height:100vh;padding:24px 14px}
+.wrap{max-width:1100px;margin:0 auto}
+h1{color:#25D366;text-align:center;font-size:1.8rem}
+.sub{text-align:center;color:#8b949e;margin:6px 0 20px;font-size:.9rem}
+.sub a{color:#25D366}
+.grid{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:900px){.grid2{grid-template-columns:340px 1fr}.grid{display:grid}}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px}
+.card h2{color:#25D366;font-size:.95rem;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+label{font-size:.78rem;color:#8b949e;display:block;margin:10px 0 4px}
+input,select,textarea{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:8px;color:#e6edf3;padding:9px 12px;font-size:.9rem;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#25D366}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{background:#25D366;color:#000;border:0;border-radius:8px;padding:10px 16px;font-weight:bold;cursor:pointer;font-size:.88rem}
+button:hover{filter:brightness(1.1)}
+button.ghost{background:transparent;color:#8b949e;border:1px solid #30363d}
+button.danger{background:#f85149;color:#fff}
+button:disabled{opacity:.5;cursor:not-allowed}
+.qr-box{text-align:center}
+.qr-box img{border-radius:12px;border:4px solid #25D366;max-width:230px;width:100%;margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:.82rem;margin-top:10px}
+th,td{padding:8px 6px;border-bottom:1px solid #21262d;text-align:left}
+th{color:#25D366;cursor:pointer;user-select:none;white-space:nowrap}
+th:hover{color:#fff}
+tr:hover td{background:#0d1117}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.68rem;font-weight:bold}
+.ok{background:#25D366;color:#000}.bad{background:#f85149;color:#fff}.wait{background:#f0883e;color:#000}
+.stat{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #21262d;font-size:.85rem}
+.val{color:#25D366;font-weight:bold}
+.prog{height:10px;background:#21262d;border-radius:6px;overflow:hidden;margin:10px 0}
+.prog>div{height:100%;background:#25D366;width:0%;transition:width .5s}
+.checks{font-size:.78rem;color:#8b949e}
+code{background:#0d1117;padding:2px 6px;border-radius:6px;color:#25D366}
+.hint{font-size:.75rem;color:#8b949e;margin-top:6px;line-height:1.5}
+.filtros{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+@media(max-width:600px){.filtros{grid-template-columns:1fr}}
+.log{max-height:220px;overflow:auto;font-size:.78rem;background:#0d1117;border-radius:8px;padding:10px;margin-top:10px}
+.log div{padding:3px 0;border-bottom:1px solid #1c2128}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>📣 Difusión masiva WhatsApp</h1>
+<p class="sub">1️⃣ Escaneá el QR con tu WhatsApp Business · 2️⃣ Cargá el Google Sheet · 3️⃣ Filtrá y enviá &nbsp;|&nbsp; <a href="/">← Panel fotocopiadora</a></p>
+
+<div class="grid grid2">
+<div>
+  <div class="card qr-box">
+    <h2>📱 Conexión WhatsApp</h2>
+    <div id="qr">Cargando...</div>
+    <div id="connInfo" class="hint"></div>
+    <div class="row" style="justify-content:center;margin-top:8px">
+      <button class="ghost" onclick="desvincular()" style="font-size:.75rem">🔄 Nuevo QR</button>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>📊 Google Sheet</h2>
+    <label>ID del Sheet (del link /d/ID/)</label>
+    <input id="sheetId" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms">
+    <label>GID de la pestaña (0 por defecto)</label>
+    <input id="sheetGid" value="0">
+    <div class="row" style="margin-top:10px">
+      <button onclick="guardarConfig()">💾 Guardar</button>
+      <button class="ghost" onclick="recargar()">📥 Cargar clientes</button>
+    </div>
+    <p class="hint">El Sheet debe estar compartido como <b>"Cualquiera con el enlace puede ver"</b>.<br>Columnas: <code>telefono</code> · <code>nombre</code> · <code>fecha_sucedio</code> · <code>fecha_subida</code> (acepta tildes y mayúsculas).</p>
+    <div id="sheetInfo" class="hint"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>✉️ Mensaje (speech)</h2>
+    <label>Plantilla — usá {nombre} {fecha_sucedio} {fecha_subida}</label>
+    <textarea id="plantilla" rows="6">Hola {nombre} 👋, te contactamos por el caso del {fecha_sucedio} (registrado el {fecha_subida}). Queríamos contarte las novedades. ¡Gracias por tu confianza!</textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="ghost" onclick="preview()">👁 Vista previa</button>
+      <span class="checks"><input type="checkbox" id="testMode" style="width:auto"> Solo 1 (prueba)</span>
+    </div>
+    <div id="previewBox" class="hint"></div>
+    <div class="filtros">
+      <div><label>Pausa entre mensajes (min seg)</label><input id="minDelay" type="number" value="6" min="3"></div>
+      <div><label>Pausa máxima (seg)</label><input id="maxDelay" type="number" value="14" min="4"></div>
+    </div>
+    <p class="hint">⏱ Recomendado 6–14 seg para no bloquear el número. En cuentas nuevas usá 10–20 seg.</p>
+  </div>
+</div>
+
+<div>
+  <div class="card">
+    <h2>🔎 Filtros y orden <span id="count" class="val"></span></h2>
+    <div class="filtros">
+      <div><label>Buscar (nombre o teléfono)</label><input id="buscar" placeholder="Ej: juan o 54911..." oninput="debounceList()"></div>
+      <div><label>Ordenar por</label><select id="orden" onchange="listar()"><option value="fecha_subida">Fecha subida</option><option value="fecha_sucedio">Fecha sucedió</option><option value="nombre">Nombre</option><option value="telefono">Teléfono</option></select></div>
+      <div><label>Dirección</label><select id="dir" onchange="listar()"><option value="desc">Descendente</option><option value="asc">Ascendente</option></select></div>
+      <div><label>Solo válidos</label><select id="soloValidos" onchange="listar()"><option value="1">Sí</option><option value="0">Todos</option></select></div>
+      <div><label>Sucedió desde</label><input id="desdeSucedio" type="date" onchange="listar()"></div>
+      <div><label>Sucedió hasta</label><input id="hastaSucedio" type="date" onchange="listar()"></div>
+      <div><label>Subida desde</label><input id="desdeSubida" type="date" onchange="listar()"></div>
+      <div><label>Subida hasta</label><input id="hastaSubida" type="date" onchange="listar()"></div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button onclick="listar()">🔄 Aplicar filtros</button>
+      <button class="ghost" onclick="limpiarFiltros()">Limpiar</button>
+      <span id="selInfo" class="checks"></span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>🚀 Envío</h2>
+    <div id="difEstado"></div>
+    <div class="prog"><div id="bar"></div></div>
+    <div class="row">
+      <button id="btnEnviar" onclick="iniciar()">📣 Enviar a filtrados</button>
+      <button class="ghost" onclick="pausar()">⏸ Pausar</button>
+      <button class="ghost" onclick="reanudar()">▶ Seguir</button>
+      <button class="danger" onclick="cancelar()">🛑 Cancelar</button>
+    </div>
+    <div id="difLog" class="log"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>👥 Clientes <span id="tblCount" class="checks"></span></h2>
+    <div style="overflow:auto">
+    <table>
+      <thead><tr>
+        <th><input type="checkbox" id="chkAll" onchange="toggleAll(this.checked)" style="width:auto"></th>
+        <th onclick="setOrden('nombre')">Nombre ⇅</th>
+        <th onclick="setOrden('telefono')">Teléfono ⇅</th>
+        <th onclick="setOrden('fecha_sucedio')">Fecha sucedió ⇅</th>
+        <th onclick="setOrden('fecha_subida')">Fecha subida ⇅</th>
+        <th>Estado</th>
+      </tr></thead>
+      <tbody id="tbody"><tr><td colspan="6" style="text-align:center;color:#8b949e">Cargá el Sheet para ver clientes...</td></tr></tbody>
+    </table>
+    </div>
+  </div>
+</div>
+</div>
+<p class="sub" id="updated"></p>
+</div>
+
+<script>
+let clientesActuales = [];
+let seleccion = new Set();
+let timer = null, debounce = null;
+
+function debounceList(){ clearTimeout(debounce); debounce = setTimeout(listar, 500); }
+function setOrden(c){ document.getElementById('orden').value = c; listar(); }
+function limpiarFiltros(){
+  ['buscar','desdeSucedio','hastaSucedio','desdeSubida','hastaSubida'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('orden').value='fecha_subida'; document.getElementById('dir').value='desc';
+  listar();
+}
+function filtrosQS(){
+  const p = new URLSearchParams({
+    buscar: document.getElementById('buscar').value,
+    orden: document.getElementById('orden').value,
+    dir: document.getElementById('dir').value,
+    soloValidos: document.getElementById('soloValidos').value,
+    desdeSucedio: document.getElementById('desdeSucedio').value,
+    hastaSucedio: document.getElementById('hastaSucedio').value,
+    desdeSubida: document.getElementById('desdeSubida').value,
+    hastaSubida: document.getElementById('hastaSubida').value,
+  });
+  return p.toString();
+}
+function toggleAll(on){
+  seleccion = new Set();
+  if(on) clientesActuales.forEach(c=>seleccion.add(c.telefono));
+  pintarTabla();
+}
+function toggleUno(tel, on){
+  if(on) seleccion.add(tel); else seleccion.delete(tel);
+  document.getElementById('selInfo').textContent = seleccion.size ? `${seleccion.size} seleccionados (se envía solo a ellos)` : '';
+}
+
+async function guardarConfig(){
+  const sheetId = document.getElementById('sheetId').value.trim();
+  const sheetGid = document.getElementById('sheetGid').value.trim() || '0';
+  await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheetId,sheetGid})});
+  alert('✅ Configuración guardada');
+}
+async function recargar(){
+  const sheetId = document.getElementById('sheetId').value.trim();
+  const sheetGid = document.getElementById('sheetGid').value.trim() || '0';
+  document.getElementById('sheetInfo').textContent = '⏳ Cargando...';
+  const r = await fetch('/api/clientes/recargar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheetId,sheetGid})});
+  const d = await r.json();
+  if(d.ok){
+    document.getElementById('sheetInfo').innerHTML = `✅ ${d.total} filas (${d.validos} válidos, ${d.invalidos} inválidos)`;
+    seleccion = new Set();
+    listar();
+  } else {
+    document.getElementById('sheetInfo').textContent = '❌ ' + (d.error||'error');
+  }
+}
+async function listar(){
+  const r = await fetch('/api/clientes?' + filtrosQS());
+  const d = await r.json();
+  if(!d.ok){ document.getElementById('tbody').innerHTML = `<tr><td colspan=6>❌ ${d.error}</td></tr>`; return; }
+  clientesActuales = d.clientes || [];
+  document.getElementById('count').textContent = `(${d.filtrados}/${d.total})`;
+  document.getElementById('tblCount').textContent = d.cacheFecha ? 'Actualizado: '+new Date(d.cacheFecha).toLocaleString() : '';
+  pintarTabla();
+}
+function pintarTabla(){
+  const tb = document.getElementById('tbody');
+  if(!clientesActuales.length){ tb.innerHTML = '<tr><td colspan=6 style="text-align:center;color:#8b949e">Sin resultados con esos filtros.</td></tr>'; return; }
+  tb.innerHTML = clientesActuales.map(c=>`<tr>
+    <td><input type="checkbox" style="width:auto" ${seleccion.has(c.telefono)?'checked':''} onchange="toggleUno('${c.telefono}',this.checked)"></td>
+    <td>${esc(c.nombre)||'<i style="color:#666">—</i>'}</td>
+    <td>+${esc(c.telefono)}</td>
+    <td>${esc(c.fecha_sucedio)||'—'}</td>
+    <td>${esc(c.fecha_subida)||'—'}</td>
+    <td>${c.telefono_valido?'<span class="badge ok">válido</span>':'<span class="badge bad">inválido</span>'}</td>
+  </tr>`).join('');
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+async function preview(){
+  if(!clientesActuales.length){ document.getElementById('previewBox').textContent='Cargá clientes primero.'; return; }
+  const c = clientesActuales[0];
+  const r = await fetch('/api/clientes/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({plantilla:document.getElementById('plantilla').value, cliente:c})});
+  const d = await r.json();
+  document.getElementById('previewBox').innerHTML = `<b>Ejemplo con ${esc(c.nombre)}:</b><br>${esc(d.texto)}`;
+}
+
+async function iniciar(){
+  const filtros = {
+    buscar: document.getElementById('buscar').value,
+    orden: document.getElementById('orden').value,
+    dir: document.getElementById('dir').value,
+    desdeSucedio: document.getElementById('desdeSucedio').value,
+    hastaSucedio: document.getElementById('hastaSucedio').value,
+    desdeSubida: document.getElementById('desdeSubida').value,
+    hastaSubida: document.getElementById('hastaSubida').value,
+    soloValidos: document.getElementById('soloValidos').value === '1',
+  };
+  const body = {
+    plantilla: document.getElementById('plantilla').value,
+    filtros,
+    telefonos: seleccion.size ? [...seleccion] : null,
+    minDelayS: Number(document.getElementById('minDelay').value)||6,
+    maxDelayS: Number(document.getElementById('maxDelay').value)||14,
+    testMode: document.getElementById('testMode').checked,
+  };
+  const n = seleccion.size ? seleccion.size : (clientesActuales.length + ' filtrados');
+  if(!confirm(`¿Enviar mensaje a ${n}? Esta acción no se puede deshacer.`)) return;
+  const r = await fetch('/api/difusion/iniciar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d = await r.json();
+  if(d.ok){ alert('📣 '+d.mensaje); estado(); } else alert('❌ '+(d.error||'error'));
+}
+async function pausar(){ await fetch('/api/difusion/pausar',{method:'POST'}); estado(); }
+async function reanudar(){ await fetch('/api/difusion/reanudar',{method:'POST'}); estado(); }
+async function cancelar(){ if(!confirm('¿Cancelar la difusión en curso?')) return; await fetch('/api/difusion/cancelar',{method:'POST'}); estado(); }
+async function desvincular(){ if(!confirm('Cerrar sesión y generar QR nuevo?')) return; await fetch('/api/desvincular',{method:'POST'}); }
+
+async function estado(){
+  try{
+    const r = await fetch('/api/difusion/estado'); const d = await r.json();
+    const pct = d.total ? Math.round((d.actual/d.total)*100) : 0;
+    document.getElementById('bar').style.width = pct + '%';
+    document.getElementById('difEstado').innerHTML =
+      `<div class="stat"><span>WhatsApp</span><span class="val">${d.botStatus}</span></div>
+       <div class="stat"><span>Progreso</span><span class="val">${d.actual||0}/${d.total||0} (${pct}%)</span></div>
+       <div class="stat"><span>Enviados</span><span class="val">✅ ${d.enviados||0}</span></div>
+       <div class="stat"><span>Errores</span><span class="val">❌ ${d.errores||0}</span></div>
+       <div class="stat"><span>Estado</span><span class="val">${d.activo ? (d.pausado?'⏸ PAUSADO':'📣 ENVIANDO...') : 'Inactivo'}</span></div>`;
+    document.getElementById('btnEnviar').disabled = !!d.activo;
+    const log = (d.resultados||[]).slice(-20).reverse();
+    document.getElementById('difLog').innerHTML = log.map(x=>`<div>${x.ok?'✅':'❌'} +${esc(x.telefono)} ${esc(x.nombre||'')} ${x.error?'<span style="color:#f85149">'+esc(x.error)+'</span>':''}</div>`).join('') || '<span style="color:#666">Sin envíos todavía.</span>';
+    // QR
+    const q = document.getElementById('qr');
+    if(d.botStatus==='conectado'){ q.innerHTML='<div style="font-size:3rem">✅</div><p class="hint">Conectado. Listo para enviar.</p>'; }
+    else if(d.qr){ q.innerHTML=`<img src="${d.qr}"><p class="hint">1. Abrí WhatsApp Business<br>2. ⋮ → Dispositivos vinculados<br>3. Vincular → escaneá el QR</p>`; }
+    else { q.innerHTML='<p class="hint">⏳ Generando QR...</p>'; }
+    // endpoint /api/difusion/estado no trae qr; pedirlo de /api/state
+    const s2 = await fetch('/api/state').then(x=>x.json()).catch(()=>null);
+    if(s2){
+      if(s2.botStatus==='conectado'){ q.innerHTML='<div style="font-size:3rem">✅</div><p class="hint">Conectado. Listo para enviar.</p>'; document.getElementById('connInfo').textContent='✅ Bot conectado'; }
+      else if(s2.qr){ q.innerHTML=`<img src="${s2.qr}"><p class="hint">1. Abrí WhatsApp Business<br>2. ⋮ → Dispositivos vinculados<br>3. Vincular → escaneá el QR</p>`; document.getElementById('connInfo').textContent='Esperando escaneo...'; }
+      if(!document.getElementById('sheetId').value && s2 && document.getElementById('sheetId')){}
+    }
+    document.getElementById('updated').textContent = 'Actualizado: ' + new Date().toLocaleTimeString();
+  }catch(e){}
+}
+async function initConfig(){
+  const r = await fetch('/api/config').then(x=>x.json()).catch(()=>null);
+  if(r && r.ok){
+    if(r.sheetId) document.getElementById('sheetId').value = r.sheetId;
+    if(r.sheetGid) document.getElementById('sheetGid').value = r.sheetGid;
+    if(r.plantillaDefault && !document.getElementById('plantilla').value) document.getElementById('plantilla').value = r.plantillaDefault;
+    if(r.totalCache){ listar(); document.getElementById('sheetInfo').textContent = `${r.totalCache} clientes en caché`; }
+  }
+}
+initConfig();
+estado();
+timer = setInterval(estado, 4000);
+</script>
+</body>
+</html>
