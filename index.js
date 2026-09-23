@@ -885,7 +885,7 @@ async function iniciarBot() {
           console.log('📵 Sesión cerrada (logout). Generando QR nuevo...');
           programarReconexion(2000);
         } else {
-          console.log('📵 Desconectado. Reconectando en 3s... (code:', code, ')');
+          console.log('📵 Desconectado. Reconectando en 3s... (code:', code, '| error:', lastDisconnect?.error?.message || lastDisconnect?.error || 'n/a', ')');
           programarReconexion(3000);
         }
       }
